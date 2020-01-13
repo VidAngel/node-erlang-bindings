@@ -6,5 +6,10 @@
   "license": "MIT",
   "dependencies": {
     "node-addon-api": "^2.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VidAngel/node-erlang-bindings"
+  },
+  "keywords": ["erlang", "elixir", "rpc"]
 }
