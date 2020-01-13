@@ -1,0 +1,10 @@
+{
+  "name": "erlang-bindings",
+  "version": "0.1.0",
+  "description": "Erlang bindings for Node.js",
+  "author": "Ian Hunter <ihunter@vidangel.com>",
+  "license": "MIT",
+  "dependencies": {
+    "node-addon-api": "^2.0.0"
+  }
+}
