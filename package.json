@@ -11,5 +11,9 @@
     "type": "git",
     "url": "https://github.com/VidAngel/node-erlang-bindings"
   },
-  "keywords": ["erlang", "elixir", "rpc"]
+  "keywords": [
+    "erlang",
+    "elixir",
+    "rpc"
+  ]
 }
