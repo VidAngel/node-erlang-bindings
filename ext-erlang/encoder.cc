@@ -24,14 +24,6 @@ void encode_array(Napi::Env env, Napi::Value val, ei_x_buff* request);
 
 string to_string(Napi::Env env, Napi::Value val);
 
-bool is_tuple(Napi::Env env, Napi::Value val) {
-  if(val.ToObject().InstanceOf(Tuple::constructor.Value())) {
-    printf("That's a tuple!\n");
-    return true;
-  }
-  return false;
-}
-
 Napi::Value decode_erlang(Napi::Env env, ei_x_buff* term) {
   int index = 0;
   return decode_erlang(env, term, &index);
@@ -146,7 +138,7 @@ void encode_value(Napi::Env env, Napi::Value val, ei_x_buff* request) {
       encode_atom(env, val, request);
       break;
     case napi_object: {
-      if(is_tuple(env, val)) { encode_tuple(env, val, request); break; }
+      if(val.ToObject().InstanceOf(Tuple::constructor.Value())) { encode_tuple(env, val, request); break; }
       if(val.IsArray()) { encode_array(env, val, request); break; }
       encode_object(env, val, request);
       break;
