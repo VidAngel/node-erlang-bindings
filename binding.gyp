@@ -2,6 +2,7 @@
   {
     "target_name": "erlang",
     "sources": [
+      "ext-erlang/custom-types.cc",
       "ext-erlang/encoder.cc",
       "ext-erlang/erlang-node.cc",
       "ext-erlang/exports.cc"

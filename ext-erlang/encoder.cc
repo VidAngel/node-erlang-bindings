@@ -1,4 +1,5 @@
 #include "./encoder.h"
+#include "./custom-types.h"
 #include <string>
 #include <cstdlib>
 #include <cstdio>
@@ -24,9 +25,10 @@ void encode_array(Napi::Env env, Napi::Value val, ei_x_buff* request);
 string to_string(Napi::Env env, Napi::Value val);
 
 bool is_tuple(Napi::Env env, Napi::Value val) {
-  Napi::Value constructor = val.ToObject().Get("constructor");
-  if(constructor.IsUndefined()) return false;
-  if(constructor.ToObject().Get("name").ToString() == Napi::String::New(env, "Tuple")) return true;
+  if(val.ToObject().InstanceOf(Tuple::constructor.Value())) {
+    printf("That's a tuple!\n");
+    return true;
+  }
   return false;
 }
 
