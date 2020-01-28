@@ -70,7 +70,7 @@ Napi::Value decode_atom(Napi::Env env, ei_x_buff* term, int* index) {
   if(strcmp(c, "true") == 0) return Napi::Boolean::New(env, true);
   else if(strcmp(c, "false") == 0) return Napi::Boolean::New(env, false);
   else if(strcmp(c, "nil") == 0) return env.Null();
-  else return Napi::Symbol::New(env, c);
+  else return Atom::Create(Napi::String::New(env, c));
 }
 Napi::Number decode_int(Napi::Env env,ei_x_buff* term, int* index) { 
   long n;
@@ -134,12 +134,10 @@ void encode_value(Napi::Env env, Napi::Value val, ei_x_buff* request) {
     case napi_number:
       encode_number(env, val, request);
       break;
-    case napi_symbol:
-      encode_atom(env, val, request);
-      break;
     case napi_object: {
-      if(val.ToObject().InstanceOf(Tuple::constructor.Value())) { encode_tuple(env, val, request); break; }
       if(val.IsArray()) { encode_array(env, val, request); break; }
+      if(val.ToObject().InstanceOf(Tuple::constructor.Value())) { encode_tuple(env, val, request); break; }
+      if(val.ToObject().InstanceOf(Atom::constructor.Value())) { encode_atom(env, val, request); break; }
       encode_object(env, val, request);
       break;
     }
@@ -218,7 +216,8 @@ void encode_array(Napi::Env env, Napi::Value val, ei_x_buff* request) {
   ei_x_encode_empty_list(request);
 }
 void encode_atom(Napi::Env env, Napi::Value val, ei_x_buff* request) {
-  string arg = val.ToObject().Get("description").ToString().Utf8Value();
+  Atom* atom = Napi::ObjectWrap<Atom>::Unwrap(val.As<Napi::Object>());
+  string arg = atom->value(env).ToString().Utf8Value();
   std::vector<char> c_arg(arg.begin(), arg.end());
   c_arg.push_back('\0');
   ei_x_encode_atom(request, &c_arg[0]);

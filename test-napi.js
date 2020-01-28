@@ -26,7 +26,7 @@ proc.stdout.on('data', data => {
   eqq(enode.rpc("Elixir.IO", "inspect", "Hello!"), "Hello!");
   eqq(enode.rpc("Elixir.IO", "inspect", "⋄~♥~⋄"), "⋄~♥~⋄");
   eqq(enode.rpc("Elixir.String", "upcase", "guy fieri"), "GUY FIERI");
-  let tupe = enode.rpc("Elixir.IO", "inspect", tuple(1, 2, 3.506, atom("HEY")));
+  let tupe = enode.rpc("Elixir.IO", "inspect", tuple(1, 2, 3.506, atom("I AM ATOM")));
   assert(tupe instanceof Tuple);
   eqq(tupe.length, 4);
   assert(tupe.value[3] instanceof Atom);

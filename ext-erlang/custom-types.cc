@@ -16,8 +16,13 @@ Napi::Object Atom::Exports(Napi::Env env, Napi::Object exports) {
     InstanceAccessor("value", &Atom::value, NULL),
     InstanceMethod("toString", &Atom::value),
   });
+  constructor = Napi::Persistent(atom);
+  constructor.SuppressDestruct();
   exports.Set("Atom", atom);
   return exports;
+}
+Napi::Object Atom::Create(Napi::Value arg) {
+  return constructor.New({arg});
 }
 
 Napi::FunctionReference Tuple::constructor;
