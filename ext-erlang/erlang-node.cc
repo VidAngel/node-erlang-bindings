@@ -61,6 +61,7 @@ Napi::Value ErlangNode::Call(const Napi::CallbackInfo &info) {
   const Napi::Value result = decode_erlang(env, &response);
   ei_x_free(&response);
   check_status(env, &result, (string)module + "." + (string)method);
+  //this->onReceive.Call(env.Global(), {Napi::String::New(env, "hello world")});
   return result;
 }
 
@@ -189,6 +190,19 @@ ErlangNode::ErlangNode(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Erlang
   this->cookie = info[1].As<Napi::String>();
   this->remote_node = info[2].As<Napi::String>();
 }
+Napi::Value ErlangNode::Receive(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  if(info.Length() < 1) {
+    Napi::TypeError::New(env, "Missing callback function").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  if(info[0].Type() != napi_function) {
+    Napi::TypeError::New(env, "Argument must be a function").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  this->onReceive = Napi::Persistent(info[0].As<Napi::Function>());
+  return env.Undefined();
+}
 
 Napi::Object ErlangNode::Exports(Napi::Env env, Napi::Object exports) {
   Napi::Function func = DefineClass(env, "ErlangNode", {
@@ -196,6 +210,7 @@ Napi::Object ErlangNode::Exports(Napi::Env env, Napi::Object exports) {
     InstanceMethod("connect", &ErlangNode::Connect),
     InstanceMethod("disconnect", &ErlangNode::Disconnect),
     InstanceMethod("rpc", &ErlangNode::Call),
+    InstanceMethod("receive", &ErlangNode::Receive),
   });
   constructor = Napi::Persistent(func);
   constructor.SuppressDestruct();
