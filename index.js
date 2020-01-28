@@ -27,3 +27,11 @@ Object.defineProperty(module.exports.ErlangNode.prototype, "ex", {
 });
 module.exports.tuple = function tupleFactory(...args) { return new module.exports.Tuple(args); }
 module.exports.atom = function atomFactory(a) {return new module.exports.Atom(a); }
+
+const util = require('util');
+module.exports.Tuple.prototype[util.inspect.custom] = function(depth, options){
+  return "Tuple {" + util.inspect(this.value).slice(1,-1)  + "}"
+}
+module.exports.Atom.prototype[util.inspect.custom] = function(depth, options){
+  return "Atom { " + util.inspect(this.value) + " }"
+}
