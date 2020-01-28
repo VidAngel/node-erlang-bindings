@@ -28,14 +28,14 @@ proc.stdout.on('data', data => {
   eqq(enode.rpc("Elixir.String", "upcase", "guy fieri"), "GUY FIERI");
   let tupe = enode.rpc("Elixir.IO", "inspect", tuple(1, 2, 3.506, atom("HEY")));
   assert(tupe instanceof Tuple);
-  assert(tupe[3] instanceof Atom);
   eqq(tupe.length, 4);
-  eqq(tupe[2],3.506);
+  assert(tupe.value[3] instanceof Atom);
+  eqq(tupe.value[2],3.506);
   const arr = [1,2,3.5,"abc",[4,5,"heyyy"]];
   assert.deepEqual(enode.rpc("Elixir.IO", "inspect", arr), arr);
   tupe = enode.rpc("Elixir.IO", "inspect", tuple(1,2,3,['a','b','c',tuple("hello",atom("world"))]));
-  eqq(tupe[3][2], 'c');
-  eqq(tupe[3][3][0], 'hello');
+  eqq(tupe.value[3][2], 'c');
+  eqq(tupe.value[3][3].value[0], 'hello');
   assert.deepEqual(enode.rpc("Elixir.IO","inspect", []), []);
   eqq(enode.rpc("Elixir.Enum", "at", [5], 10), null);
   eqq(enode.rpc("Elixir.Enum", "at", [5], 0), 5);

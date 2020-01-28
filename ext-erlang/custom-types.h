@@ -17,6 +17,8 @@ class Atom  : public Napi::ObjectWrap<Atom> {
 
 class Tuple : public Napi::ObjectWrap<Tuple>{
   public:
+    Tuple(Napi::Value val);
+    static Napi::Object Create(Napi::Value arg);
     Tuple(const Napi::CallbackInfo &info);
     static Napi::Object Exports(Napi::Env env, Napi::Object exports);
     Napi::Value value(const Napi::CallbackInfo &info);

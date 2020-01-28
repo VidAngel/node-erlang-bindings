@@ -39,6 +39,9 @@ Napi::Value Tuple::value(Napi::Env env) { return this->array.Value(); }
 Napi::Value Tuple::length(const Napi::CallbackInfo &info) {
   return Napi::Number::New(info.Env(), this->array.Value().As<Napi::Array>().Length());
 }
+Napi::Object Tuple::Create(Napi::Value arg) {
+  return constructor.New({arg});
+}
 Napi::Object Tuple::Exports(Napi::Env env, Napi::Object exports) {
   Napi::Function tuple = DefineClass(env, "Tuple", {
     InstanceAccessor("value", &Tuple::value, NULL),

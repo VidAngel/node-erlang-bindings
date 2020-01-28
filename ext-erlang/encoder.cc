@@ -9,7 +9,7 @@ Napi::Value decode_atom(Napi::Env env, ei_x_buff* term, int* index);
 Napi::Number decode_int(Napi::Env env,ei_x_buff* term, int* index);
 Napi::Number decode_double(Napi::Env env,ei_x_buff* term, int* index);
 Napi::Object decode_map(Napi::Env env,ei_x_buff* term, int* index, int arity);
-Napi::Array decode_tuple(Napi::Env env, ei_x_buff* term, int* index, int arity);
+Napi::Object decode_tuple(Napi::Env env, ei_x_buff* term, int* index, int arity);
 Napi::Array decode_list(Napi::Env env, ei_x_buff* term, int* index, int arity);
 Napi::Value decode_binary(Napi::Env env, ei_x_buff* term, int* index, int size);
 Napi::String decode_charlist(Napi::Env env, ei_x_buff* term, int* index, int size);
@@ -92,13 +92,13 @@ Napi::Object decode_map(Napi::Env env,ei_x_buff* term, int* index, int arity) {
   }
   return obj;
 }
-Napi::Array decode_tuple(Napi::Env env, ei_x_buff* term, int* index, int arity) {
+Napi::Object decode_tuple(Napi::Env env, ei_x_buff* term, int* index, int arity) {
   ei_decode_tuple_header(term->buff, index, NULL);
   Napi::Array arr = Napi::Array::New(env, arity);
   for(int i = 0; i<arity; i++) {
     arr[i] = decode_erlang(env, term, index);
   }
-  return arr;
+  return Tuple::Create(arr);
 }
 Napi::Array decode_list(Napi::Env env, ei_x_buff* term, int* index, int arity) {
   ei_decode_list_header(term->buff, index, NULL);
