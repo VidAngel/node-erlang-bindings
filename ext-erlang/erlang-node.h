@@ -1,5 +1,5 @@
-#ifndef ERLANG_NODE
-#define ERLANG_NODE
+#pragma once
+#include <napi.h>
 #include <erl_interface.h>
 #include <ei.h>
 #include <string>
@@ -27,4 +27,3 @@ class ErlangNode : public Napi::ObjectWrap<ErlangNode> {
     Napi::Value Call(const Napi::CallbackInfo &info);
     void Listen();
 };
-#endif

@@ -1,6 +1,6 @@
 const assert = require('assert');
 const eqq = assert.strictEqual;
-const {ErlangNode,tuple,charlist} = require('./index');
+const {ErlangNode,tuple,charlist,atom,Tuple,Atom} = require('./index');
 
 const spawn = require('child_process').spawn;
 
@@ -26,13 +26,13 @@ proc.stdout.on('data', data => {
   eqq(enode.rpc("Elixir.IO", "inspect", "Hello!"), "Hello!");
   eqq(enode.rpc("Elixir.IO", "inspect", "⋄~♥~⋄"), "⋄~♥~⋄");
   eqq(enode.rpc("Elixir.String", "upcase", "guy fieri"), "GUY FIERI");
-  let tupe = enode.rpc("Elixir.IO", "inspect", tuple(1, 2, 3.506, Symbol("HEY")));
-  eqq(typeof tupe[3], 'symbol');
+  let tupe = enode.rpc("Elixir.IO", "inspect", tuple(1, 2, 3.506, atom("HEY"))).value;
+  assert(tupe[3] instanceof Atom);
   eqq(tupe.length, 4);
   eqq(tupe[2],3.506);
   const arr = [1,2,3.5,"abc",[4,5,"heyyy"]];
   assert.deepEqual(enode.rpc("Elixir.IO", "inspect", arr), arr);
-  tupe = enode.rpc("Elixir.IO", "inspect", tuple(1,2,3,['a','b','c',tuple("hello",Symbol("world"))]));
+  tupe = enode.rpc("Elixir.IO", "inspect", tuple(1,2,3,['a','b','c',tuple("hello",atom("world"))]));
   eqq(tupe[3][2], 'c');
   eqq(tupe[3][3][0], 'hello');
   assert.deepEqual(enode.rpc("Elixir.IO","inspect", []), []);
@@ -45,10 +45,10 @@ proc.stdout.on('data', data => {
   eqq(enode.ex.List.first([6,3,2]), 6);
   eqq(enode.ex.Enum.at([4,5,2], 1), 5);
   eqq(enode.ex.String.pad_leading("a", 4, "0"), "000a");
-  function badenode(){  enode.ex.GenServer.call(Symbol("SomeFakeProcessName"), Symbol("fakeaction"))};
+  function badenode(){  enode.ex.GenServer.call(atom("SomeFakeProcessName"), atom("fakeaction"))};
   assert.throws(badenode, /badrpc\(noproc\)/);
   assert.throws(enode.ex.FakeModule.fake_function);
-  enode.ex.IO.ANSI.format(["Hello", Symbol("red"), "World"], true);
+  enode.ex.IO.ANSI.format(["Hello", atom("red"), "World"], true);
   //enode.ex.System.stop()
   done = true;
   console.log("All tests passed. Closing node.");

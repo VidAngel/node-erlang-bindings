@@ -175,6 +175,8 @@ Napi::Object ErlangNode::Exports(Napi::Env env, Napi::Object exports) {
     InstanceMethod("disconnect", &ErlangNode::Disconnect),
     InstanceMethod("rpc", &ErlangNode::Call),
   });
+  constructor = Napi::Persistent(func);
+  constructor.SuppressDestruct();
   exports.Set("ErlangNode", func);
   return exports;
 }

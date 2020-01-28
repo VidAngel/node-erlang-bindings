@@ -1,8 +1,4 @@
 module.exports = require('./build/Release/erlang');
-class Tuple extends Array{};
-class Atom extends String{};
-module.exports.atom = function() { return new Atom(...arguments) };
-module.exports.tuple = function() { return new Tuple(...arguments) };
 module.exports.charlist = (str) => {
   const list = [];
   // "A string [charlist] in Erlang is a list of integers between 0 and 255"
@@ -29,3 +25,5 @@ Object.defineProperty(module.exports.ErlangNode.prototype, "ex", {
     return new Proxy({path: "Elixir", self: this}, moduleHandler);
   }
 });
+module.exports.tuple = function tupleFactory(...args) { return new module.exports.Tuple(args); }
+module.exports.atom = function atomFactory(a) {return new module.exports.Atom(a); }
