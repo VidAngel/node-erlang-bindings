@@ -126,6 +126,13 @@ Napi::String decode_charlist(Napi::Env env, ei_x_buff* term, int* index, int siz
   return Napi::String::New(env, str);
 }
 
+bool is_tuple(Napi::Value val) {
+  return val.ToObject().InstanceOf(Tuple::constructor.Value());
+}
+bool is_atom(Napi::Value val) {
+  return val.ToObject().InstanceOf(Atom::constructor.Value());
+}
+
 void encode_value(Napi::Env env, Napi::Value val, ei_x_buff* request) {
   switch(val.Type()) {
     case napi_string:
@@ -136,8 +143,8 @@ void encode_value(Napi::Env env, Napi::Value val, ei_x_buff* request) {
       break;
     case napi_object: {
       if(val.IsArray()) { encode_array(env, val, request); break; }
-      if(val.ToObject().InstanceOf(Tuple::constructor.Value())) { encode_tuple(env, val, request); break; }
-      if(val.ToObject().InstanceOf(Atom::constructor.Value())) { encode_atom(env, val, request); break; }
+      if(is_tuple(val)) { encode_tuple(env, val, request); break; }
+      if(is_atom(val)) { encode_atom(env, val, request); break; }
       encode_object(env, val, request);
       break;
     }

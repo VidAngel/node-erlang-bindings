@@ -5,6 +5,7 @@
 #include <napi.h>
 #include <cstdlib>
 #include <string>
+#include "./custom-types.h"
 #include "./erlang-node.h"
 #include "./encoder.h"
 
@@ -64,17 +65,38 @@ Napi::Value ErlangNode::Call(const Napi::CallbackInfo &info) {
 }
 
 void check_status(Napi::Env env, const Napi::Value *val, string fnName) {
-  if(!val->IsArray()) return;
-  Napi::Array arr = val->As<Napi::Array>();
+  // a bad status will look like this:
+  /**
+   * Tuple {
+   *   Atom { 'badrpc' },
+   *   Tuple {
+   *     Atom { 'EXIT' },
+   *     Tuple {
+   *       Atom { 'noproc' },
+   *       Tuple {
+   *         Atom { 'Elixir.GenServer' },
+   *         Atom { 'call' },
+   *         [ Atom { 'SomeFakeProcessName' }, Atom { 'fakeaction' }, 5000 ]
+   *       }
+   *     }
+   *   }
+   * }
+   */
+  
+  if(val->IsNull()) return;
+  if(!is_tuple(*val)) return;
+  Tuple* t = unwrap<Tuple>(*val);
+  Napi::Array arr = t->value(env).As<Napi::Array>();
   if(arr.Length() != 2) return;
   Napi::Value first = arr[(int)0];
-  if(first.Type() != napi_symbol) return;
-  string desc = first.ToObject().Get("description").ToString().Utf8Value();
+  if(!is_atom(first)) return;
+  string desc = first.ToString().Utf8Value();
   if(desc != "badrpc") return;
-  // there's got to be a better way...
-  Napi::Array subarr = ((Napi::Value)arr[1]).As<Napi::Array>();
-  Napi::Array subsubarr = Napi::Value(subarr[1]).As<Napi::Array>();
-  string err = ((Napi::Value)subsubarr[(int)0]).ToObject().Get("description").ToString().Utf8Value();
+
+  Tuple* sub = unwrap<Tuple>(arr[1]);
+  Tuple* subsub = unwrap<Tuple>(sub->value(env).As<Napi::Array>()[1]);
+  Napi::Array subsubarr = subsub->value(env).As<Napi::Array>();
+  string err = ((Napi::Value)subsubarr[(int)0]).ToString().Utf8Value();
 
   string prefix = "badrpc(" + err + ")";
   if(err == "undef") {
