@@ -10,6 +10,7 @@ Atom::Atom(const Napi::CallbackInfo &info)  : Napi::ObjectWrap<Atom>(info) {
 }
 
 Napi::Value Atom::value(const Napi::CallbackInfo &info){ return Napi::String::New(info.Env(), this->str); }
+Napi::Value Atom::value(Napi::Env env){ return Napi::String::New(env, this->str); }
 Napi::Object Atom::Exports(Napi::Env env, Napi::Object exports) {
   Napi::Function atom = DefineClass(env, "Atom", {
     InstanceAccessor("value", &Atom::value, NULL),
@@ -34,9 +35,14 @@ Tuple::Tuple(const Napi::CallbackInfo &info)  : Napi::ObjectWrap<Tuple>(info) {
 }
 
 Napi::Value Tuple::value(const Napi::CallbackInfo &info) { return this->array.Value(); }
+Napi::Value Tuple::value(Napi::Env env) { return this->array.Value(); }
+Napi::Value Tuple::length(const Napi::CallbackInfo &info) {
+  return Napi::Number::New(info.Env(), this->array.Value().As<Napi::Array>().Length());
+}
 Napi::Object Tuple::Exports(Napi::Env env, Napi::Object exports) {
   Napi::Function tuple = DefineClass(env, "Tuple", {
     InstanceAccessor("value", &Tuple::value, NULL),
+    InstanceAccessor("length", &Tuple::length, NULL),
   });
   constructor = Napi::Persistent(tuple);
   constructor.SuppressDestruct();

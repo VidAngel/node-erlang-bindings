@@ -225,7 +225,8 @@ void encode_atom(Napi::Env env, Napi::Value val, ei_x_buff* request) {
 }
 
 void encode_tuple(Napi::Env env, Napi::Value val, ei_x_buff* request) {
-  Napi::Array arr = val.As<Napi::Array>();
+  Tuple* t = Napi::ObjectWrap<Tuple>::Unwrap(val.As<Napi::Object>());
+  Napi::Array arr = t->value(env).As<Napi::Array>();
   int len = arr.Length();
   ei_x_encode_tuple_header(request, len);
   for(int i = 0; i<len; i++) {

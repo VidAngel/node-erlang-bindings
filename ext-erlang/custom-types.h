@@ -8,6 +8,7 @@ class Atom  : public Napi::ObjectWrap<Atom> {
     Atom(const Napi::CallbackInfo &info);
     static Napi::Object Exports(Napi::Env env, Napi::Object exports);
     Napi::Value value(const Napi::CallbackInfo &info);
+    Napi::Value value(Napi::Env env);
     static Napi::FunctionReference constructor;
 
   private:
@@ -19,6 +20,8 @@ class Tuple : public Napi::ObjectWrap<Tuple>{
     Tuple(const Napi::CallbackInfo &info);
     static Napi::Object Exports(Napi::Env env, Napi::Object exports);
     Napi::Value value(const Napi::CallbackInfo &info);
+    Napi::Value value(Napi::Env env);
+    Napi::Value length(const Napi::CallbackInfo &info);
     static Napi::FunctionReference constructor;
     ~Tuple();
 
