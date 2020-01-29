@@ -43,8 +43,11 @@ Napi::Value decode_erlang(Napi::Env env, char* buff, int* index) {
       return Napi::Array::New(env, {});
     case ERL_MAP_EXT:
       return decode_map(env, buff, index, size);
+    // TODO: whatever 113 or 'q' is
     default:
-      return env.Undefined();
+      fprintf(stderr, "Unexpected type: %d\n", type);
+      (*index)++;
+      return decode_erlang(env, buff, index);
   }
 }
 
