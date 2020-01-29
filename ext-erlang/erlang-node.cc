@@ -5,6 +5,7 @@
 #include <napi.h>
 #include <cstdlib>
 #include <string>
+#include <utility>
 #include "./custom-types.h"
 #include "./erlang-node.h"
 #include "./encoder.h"
@@ -124,7 +125,7 @@ ei_x_buff encode_args(const Napi::CallbackInfo &info, int index) {
 }
 
 using namespace Napi;
-class ErlangListener : public AsyncProgressWorker<ei_x_buff> {
+class ErlangListener : public AsyncProgressWorker< std::tuple<int, long, int, ei_x_buff* > > {
   public:
     ErlangListener(Napi::Function& callback, ErlangNode* node) : AsyncProgressWorker(callback), callback(callback), node(node) {}
     ~ErlangListener(){}
@@ -149,29 +150,36 @@ class ErlangListener : public AsyncProgressWorker<ei_x_buff> {
         int result = ei_xreceive_msg_tmo(node->sockfd, &msg, &buff, 10);
         FD_CLR(node->sockfd, &erlfd);
         FD_ZERO(&erlfd);
-        switch(result) {
-          case ERL_TICK:
-            ei_x_free(&buff);
-            break;
-          case ERL_ERROR:
-            ei_x_free(&buff);
-            if(erl_errno == EAGAIN) continue;
-            fprintf(stderr, "Error reading Erlang message: %d\n",  erl_errno);
-            return;
-          default:
-            if(msg.msgtype == ERL_SEND || msg.msgtype == ERL_REG_SEND) {
-              progress.Send(&buff, 1);
-            }
-            continue;
+
+        auto p = std::make_tuple(result, msg.msgtype, erl_errno, &buff);
+        progress.Send(&p, 1);
+        if(result == ERL_ERROR && erl_errno != EAGAIN) {
+          break;
         }
       }
     }
-    void OnOK() override {
-      Napi::Error::New(Env(), "Erlang listener died unexpectedly").ThrowAsJavaScriptException();
-    }
-    void OnProgress(const ei_x_buff* term, size_t count) override {
+    void OnOK() override {}
+    void OnProgress(const std::tuple<int, long, int, ei_x_buff* > * result, size_t count) override {
       HandleScope scope(Env());
-      Callback().Call(node->Value(), {Napi::String::New(Env(), "message"), decode_erlang(Env(), term->buff)});
+      int type = std::get<0>(*result);
+      double err = std::get<2>(*result);
+
+      switch(type) {
+        case ERL_TICK:
+          Callback().Call(node->Value(), {Napi::String::New(Env(), "tick")});
+          break;
+        case ERL_ERROR:
+          if(err == EAGAIN) return;
+          Callback().Call(node->Value(), {Napi::String::New(Env(), "error"), Napi::Number::New(Env(), err)});
+          break;
+        default:
+          long msgtype = std::get<1>(*result);
+          if(msgtype == ERL_SEND || msgtype == ERL_REG_SEND) {
+            Callback().Call(node->Value(), {Napi::String::New(Env(), "message"), decode_erlang(Env(), std::get<3>(*result)->buff)});
+          }
+          break;
+      }
+      
     }
   private:
     Napi::Function callback;

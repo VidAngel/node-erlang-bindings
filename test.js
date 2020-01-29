@@ -1,12 +1,17 @@
 const {ErlangNode,atom} = require('./index');
 const enode = new ErlangNode("mynodename", "abc123", "napi@127.0.0.1");
 
-function response(response){
-  console.log("RESPONSE", response);
-};
+enode.on('message', function(response) {
+  console.log("MESSAGE", response);
+});
 
-enode.on('message',response.bind(enode));
-enode.emit("message", "hmm");
+enode.on('tick', function() {
+  console.log("TICK");
+});
+
+enode.on('error', function(errno) {
+  console.log("ERROR", errno);
+});
 
 setTimeout(function(){
   console.log(enode.ex.Node.list(atom("hidden")));
