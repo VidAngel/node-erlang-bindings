@@ -44,6 +44,9 @@ Napi::Value decode_erlang(Napi::Env env, char* buff, int* index) {
     case ERL_MAP_EXT:
       return decode_map(env, buff, index, size);
     // TODO: whatever 113 or 'q' is
+    case 'q': // ERL_EXPORT_EXT (??)
+      (*index)++;
+      return decode_erlang(env, buff, index);
     default:
       fprintf(stderr, "Unexpected type: %d\n", type);
       (*index)++;
