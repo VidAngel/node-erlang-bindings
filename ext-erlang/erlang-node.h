@@ -9,15 +9,11 @@ using std::string;
 class ErlangNode : public Napi::ObjectWrap<ErlangNode> {
   public:
     ErlangNode(const Napi::CallbackInfo &info);
-    Napi::Value Receive(const Napi::CallbackInfo &info);
     ~ErlangNode() { this->_disconnect(); }
     static Napi::Object Exports(Napi::Env env, Napi::Object exports);
+    int sockfd = -1;
 
   private:
-    int sockfd = -1;
-    Napi::FunctionReference onReceive;
-    Napi::AsyncContext *onReceiveCtx;
-    int recv = 0;
     static Napi::FunctionReference constructor;
     Napi::Value GetName(const Napi::CallbackInfo &info) { return Napi::String::New(info.Env(), this->node_name);}
     void SetName(const Napi::CallbackInfo &info, const Napi::Value &value) { this->node_name = value.As<Napi::String>();}

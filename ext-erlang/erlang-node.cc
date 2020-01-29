@@ -123,102 +123,92 @@ ei_x_buff encode_args(const Napi::CallbackInfo &info, int index) {
   return request;
 }
 
-Napi::Value ErlangNode::Connect(const Napi::CallbackInfo &info) {
-  Napi::Env env = info.Env();
-  // dunno if this is necessary or the best way to handle this
-  short creation = rand() % 256;
-  if(ei_connect_init(&(this->ec), this->node_name.c_str(), this->cookie.c_str(), creation) < 0) {
-    Napi::Error::New(env, "Could not initialize erlang node").ThrowAsJavaScriptException();
-    return Napi::Boolean::New(env, false);
-  }
-  if((this->sockfd = ei_connect(&(this->ec), const_cast<char*>(this->remote_node.c_str()))) < 0) {
-    Napi::Error::New(env, "Could not connect to remote node '" + this->remote_node + "'").ThrowAsJavaScriptException();
-    return Napi::Boolean::New(env, false);
-  }
-  std::thread listener(&ErlangNode::Listen, std::ref(*this));
-  listener.detach();
-  return Napi::Boolean::New(env, true);
-}
-
-void ErlangNode::Listen() {
-  while(1) {
-    std::this_thread::sleep_for (std::chrono::seconds(1));
-    int maxfd = this->sockfd;
-    fd_set erlfd;
-    FD_ZERO(&erlfd);
-    FD_SET(this->sockfd, &erlfd);
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 10;
-    if(select(maxfd+1, &erlfd, NULL, NULL, &tv) <= 0) {
-      FD_CLR(this->sockfd, &erlfd);
-      FD_ZERO(&erlfd);
-      continue;
-    }
-    erlang_msg msg;
-    ei_x_buff buff;
-    ei_x_new(&buff);
-    int result = ei_xreceive_msg_tmo(sockfd, &msg, &buff, 10);
-    FD_CLR(this->sockfd, &erlfd);
-    FD_ZERO(&erlfd);
-    switch(result) {
-      case ERL_TICK:
-        if(this->recv > 0) {
-          // TODO
-          //this->onReceive.MakeCallback(Napi::Object::New(this->onReceiveCtx->Env()), {Napi::String::New(this->onReceiveCtx->Env(), "hello world")}, *(this->onReceiveCtx));
+class ErlangListener : public Napi::AsyncWorker {
+  public:
+    ErlangListener(Napi::Function& callback, ErlangNode* node) : AsyncWorker(callback), callback(callback), node(node) {}
+    ~ErlangListener(){}
+    void Execute() override {
+      while(1) {
+        std::this_thread::sleep_for (std::chrono::seconds(1));
+        int maxfd = node->sockfd;
+        fd_set erlfd;
+        FD_ZERO(&erlfd);
+        FD_SET(node->sockfd, &erlfd);
+        struct timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 10;
+        if(select(maxfd+1, &erlfd, NULL, NULL, &tv) <= 0) {
+          FD_CLR(node->sockfd, &erlfd);
+          FD_ZERO(&erlfd);
+          continue;
         }
-        fprintf(stderr, "TICK\n");
-        break;
-      case ERL_ERROR:
-        fprintf(stderr, "Error reading Erlang message: %d\n",  erl_errno);
-        break;
-      default:
-        // TODO
-        break;
+        ei_x_new(&buff);
+        int result = ei_xreceive_msg_tmo(node->sockfd, &msg, &buff, 10);
+        FD_CLR(node->sockfd, &erlfd);
+        FD_ZERO(&erlfd);
+        switch(result) {
+          case ERL_TICK:
+            fprintf(stderr, "TICK\n");
+            break;
+          case ERL_ERROR:
+            if(erl_errno == EAGAIN) continue;
+            fprintf(stderr, "Error reading Erlang message: %d\n",  erl_errno);
+            break;
+          default:
+            // TODO
+            fprintf(stderr, "CUSTOM MESSAGE\n");
+            return;
+        }
+      }
     }
-  }
-}
+    void OnOK() override {
+      Napi::HandleScope scope(Env());
+      Callback().Call({Napi::String::New(Env(), "HELLO")});
+    }
+  private:
+    ErlangNode* node;
+    Napi::Function callback;
+    ei_x_buff buff;
+    erlang_msg msg;
+};
 
 Napi::FunctionReference ErlangNode::constructor;
 ErlangNode::ErlangNode(const Napi::CallbackInfo& info) : Napi::ObjectWrap<ErlangNode>(info) {
   ei_init();
   Napi::Env env = info.Env();
-  if(info.Length() != 3) {
-    Napi::TypeError::New(env, "Wrong number of arguments. Expected: node name, cookie, remote node").ThrowAsJavaScriptException();
+  if(info.Length() != 4) {
+    Napi::TypeError::New(env, "Wrong number of arguments. Expected: node name, cookie, remote node, and listener callback").ThrowAsJavaScriptException();
     return;
   }
+
   this->node_name = info[0].As<Napi::String>();
   this->cookie = info[1].As<Napi::String>();
   this->remote_node = info[2].As<Napi::String>();
-}
-Napi::Value ErlangNode::Receive(const Napi::CallbackInfo& info) {
-  Napi::Env env = info.Env();
-  if(info.Length() < 1) {
-    Napi::TypeError::New(env, "Missing callback function").ThrowAsJavaScriptException();
-    return env.Undefined();
+
+  // dunno if this is necessary or the best way to handle this
+  short creation = rand() % 256;
+  if(ei_connect_init(&(this->ec), this->node_name.c_str(), this->cookie.c_str(), creation) < 0) {
+    Napi::Error::New(env, "Could not initialize erlang node").ThrowAsJavaScriptException();
+    return;
   }
-  if(info[0].Type() != napi_function) {
+
+  if(info[3].Type() != napi_function) {
     Napi::TypeError::New(env, "Argument must be a function").ThrowAsJavaScriptException();
-    return env.Undefined();
+    return;
   }
-  if(this->recv > 0) {
-    this->onReceive.Unref();
+  Napi::Function cb = info[3].As<Napi::Function>();
+  (new ErlangListener(cb, this))->Queue();
+  if((this->sockfd = ei_connect(&(this->ec), const_cast<char*>(this->remote_node.c_str()))) < 0) {
+    Napi::Error::New(env, "Could not connect to remote node '" + this->remote_node + "'").ThrowAsJavaScriptException();
+    return;
   }
-  this->recv = 1;
-  Napi::AsyncContext ctx = Napi::AsyncContext(env, "erl_async_context");
-  this->onReceiveCtx = &ctx;
-  this->onReceive = Napi::Persistent(info[0].As<Napi::Function>());
-  //this->onReceive.MakeCallback(Napi::Object::New(this->onReceiveCtx->Env()), {Napi::String::New(this->onReceiveCtx->Env(), "hello world")}, *(this->onReceiveCtx));
-  return env.Undefined();
 }
 
 Napi::Object ErlangNode::Exports(Napi::Env env, Napi::Object exports) {
   Napi::Function func = DefineClass(env, "ErlangNode", {
     InstanceAccessor("node_name", &ErlangNode::GetName, &ErlangNode::SetName),
-    InstanceMethod("connect", &ErlangNode::Connect),
     InstanceMethod("disconnect", &ErlangNode::Disconnect),
     InstanceMethod("rpc", &ErlangNode::Call),
-    InstanceMethod("receive", &ErlangNode::Receive),
   });
   constructor = Napi::Persistent(func);
   constructor.SuppressDestruct();

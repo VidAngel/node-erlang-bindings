@@ -16,8 +16,7 @@ proc.stdout.on('data', data => {
   const str = data.toString().trim();
   if(str !== 'ready') return;
   try {
-  const enode = new ErlangNode("mynodename", "abc123", "napi@127.0.0.1");
-  enode.connect();
+  const enode = new ErlangNode("mynodename", "abc123", "napi@127.0.0.1", () => {});
   eqq(enode.rpc("Elixir.Enum", "max", [5,4,9,2]), 9);
   eqq(enode.rpc("Elixir.Enum", "member?", [5,4,9,2], 2), true);
   eqq(enode.rpc("Elixir.Enum", "member?", [5,4,9,2], 242), false);
