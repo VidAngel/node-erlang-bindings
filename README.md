@@ -14,7 +14,8 @@ you can connect to it in Node.js with the following code
 
 ```javascript
 const {ErlangNode,tuple,charlist} = require('erlang-bindings');
-const mynode = new ErlangNode("mynodename@127.0.0.1", "mycookie", "remotenode@127.0.0.1");
+// will be accessible on the Erlang server as 'mynodename@127.0.0.1'
+const mynode = new ErlangNode("mynodename", "mycookie", "remotenode@127.0.0.1");
 mynode.on('message', function(data) {
   // contains a message from the remote node
 });
