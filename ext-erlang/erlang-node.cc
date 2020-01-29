@@ -5,6 +5,7 @@
 #include <napi.h>
 #include <cstdlib>
 #include <string>
+#include <arpa/inet.h>
 #include <utility>
 #include "./custom-types.h"
 #include "./erlang-node.h"
@@ -214,7 +215,10 @@ ErlangNode::ErlangNode(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Erlang
   this->remote_node = info[2].As<Napi::String>();
 
   // dunno if this is necessary or the best way to handle this
-  if(ei_connect_init(&(this->ec), this->node_name.c_str(), this->cookie.c_str(), creation++) < 0) {
+  struct in_addr addr;
+  addr.s_addr = inet_addr("127.0.0.1");
+  string fullAddr = this->node_name + "@127.0.0.1";
+  if(ei_connect_xinit(&(this->ec), "127.0.0.1", this->node_name.c_str(), fullAddr.c_str(), &addr, this->cookie.c_str(), creation++) < 0) {
     Napi::Error::New(env, "Could not initialize erlang node").ThrowAsJavaScriptException();
     return;
   }
