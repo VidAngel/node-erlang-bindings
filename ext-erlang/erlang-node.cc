@@ -59,7 +59,7 @@ Napi::Value ErlangNode::Call(const Napi::CallbackInfo &info) {
     ei_x_free(&response);
     return env.Undefined();
   }
-  const Napi::Value result = decode_erlang(env, &response);
+  const Napi::Value result = decode_erlang(env, response.buff);
   ei_x_free(&response);
   check_status(env, &result, (string)module + "." + (string)method);
   return result;
@@ -170,6 +170,7 @@ class ErlangListener : public AsyncProgressWorker<ei_x_buff> {
     void OnProgress(const ei_x_buff* term, size_t count) override {
       HandleScope scope(Env());
       Callback().Call({decode_erlang(Env(), term->buff)});
+      // TODO: free term memory
     }
   private:
     Napi::Function callback;
