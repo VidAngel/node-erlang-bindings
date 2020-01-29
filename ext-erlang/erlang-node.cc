@@ -154,6 +154,7 @@ class ErlangListener : public AsyncProgressWorker< std::tuple<int, long, int, ei
         auto p = std::make_tuple(result, msg.msgtype, erl_errno, &buff);
         progress.Send(&p, 1);
         if(result == ERL_ERROR && erl_errno != EAGAIN) {
+          std::this_thread::sleep_for (std::chrono::seconds(1));
           break;
         }
       }
