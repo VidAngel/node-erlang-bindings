@@ -15,8 +15,8 @@ proc.on('close', _ => assert(done, "Process closed before completion"));
 proc.stdout.on('data', data => {
   const str = data.toString().trim();
   if(str !== 'ready') return;
-  try {
   const enode = new ErlangNode("mynodename", "abc123", "napi@127.0.0.1");
+  try {
   eqq(enode.rpc("Elixir.Enum", "max", [5,4,9,2]), 9);
   eqq(enode.rpc("Elixir.Enum", "member?", [5,4,9,2], 2), true);
   eqq(enode.rpc("Elixir.Enum", "member?", [5,4,9,2], 242), false);
@@ -52,5 +52,8 @@ proc.stdout.on('data', data => {
   //enode.ex.System.stop()
   done = true;
   console.log("All tests passed. Closing node.");
-  } finally {proc.kill()}
+  } finally {
+    proc.kill()
+    enode.disconnect();
+  }
 })

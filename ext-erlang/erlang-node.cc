@@ -134,6 +134,7 @@ class ErlangListener : public AsyncProgressWorker< std::tuple<int, long, int, ei
     void Execute(const ExecutionProgress& progress) {
       std::this_thread::sleep_for (std::chrono::seconds(1));
       while(1) {
+        if(node->sockfd == -1) break;
         int maxfd = node->sockfd;
         fd_set erlfd;
         FD_ZERO(&erlfd);
