@@ -1,4 +1,8 @@
 module.exports = require('./build/Release/erlang');
+require('util').inherits(module.exports.ErlangNode, require('events'));
+module.exports.ErlangNode.prototype.emitt = function() {
+  console.log(this, arguments);
+};
 module.exports.charlist = (str) => {
   const list = [];
   // "A string [charlist] in Erlang is a list of integers between 0 and 255"

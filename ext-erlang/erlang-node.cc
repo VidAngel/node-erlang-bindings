@@ -166,11 +166,12 @@ class ErlangListener : public AsyncProgressWorker<ei_x_buff> {
         }
       }
     }
-    void OnOK() override {}
+    void OnOK() override {
+      Napi::Error::New(Env(), "Erlang listener died unexpectedly").ThrowAsJavaScriptException();
+    }
     void OnProgress(const ei_x_buff* term, size_t count) override {
       HandleScope scope(Env());
-      Callback().Call({decode_erlang(Env(), term->buff)});
-      // TODO: free term memory
+      Callback().Call(node->Value(), {Napi::String::New(Env(), "message"), decode_erlang(Env(), term->buff)});
     }
   private:
     Napi::Function callback;
@@ -181,12 +182,8 @@ Napi::FunctionReference ErlangNode::constructor;
 ErlangNode::ErlangNode(const Napi::CallbackInfo& info) : Napi::ObjectWrap<ErlangNode>(info) {
   ei_init();
   Napi::Env env = info.Env();
-  if(info.Length() != 4) {
-    Napi::TypeError::New(env, "Wrong number of arguments. Expected: node name, cookie, remote node, and listener callback").ThrowAsJavaScriptException();
-    return;
-  }
-  if(info[3].Type() != napi_function) {
-    Napi::TypeError::New(env, "Argument must be a function").ThrowAsJavaScriptException();
+  if(info.Length() != 3) {
+    Napi::TypeError::New(env, "Wrong number of arguments. Expected: node name, cookie, remote node").ThrowAsJavaScriptException();
     return;
   }
 
@@ -201,7 +198,7 @@ ErlangNode::ErlangNode(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Erlang
     return;
   }
 
-  Napi::Function cb = info[3].As<Napi::Function>();
+  Napi::Function cb = info.This().As<Napi::Object>().Get("emit").As<Napi::Function>();
   ErlangListener* el = new ErlangListener(cb, this);
   el->Queue();
   if((this->sockfd = ei_connect(&(this->ec), const_cast<char*>(this->remote_node.c_str()))) < 0) {
