@@ -12,6 +12,7 @@ class ErlangNode : public Napi::ObjectWrap<ErlangNode> {
     ~ErlangNode() { this->_disconnect(); }
     static Napi::Object Exports(Napi::Env env, Napi::Object exports);
     int sockfd = -1;
+    static short creation;
 
   private:
     static Napi::FunctionReference constructor;

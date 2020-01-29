@@ -20,6 +20,8 @@ void ErlangNode::_disconnect() {
  this->sockfd = -1;
 }
 
+short ErlangNode::creation = 0;
+
 Napi::Value ErlangNode::Call(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
   if(info.Length() < 2) {
@@ -201,8 +203,7 @@ ErlangNode::ErlangNode(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Erlang
   this->remote_node = info[2].As<Napi::String>();
 
   // dunno if this is necessary or the best way to handle this
-  short creation = rand() % 256;
-  if(ei_connect_init(&(this->ec), this->node_name.c_str(), this->cookie.c_str(), creation) < 0) {
+  if(ei_connect_init(&(this->ec), this->node_name.c_str(), this->cookie.c_str(), creation++) < 0) {
     Napi::Error::New(env, "Could not initialize erlang node").ThrowAsJavaScriptException();
     return;
   }
