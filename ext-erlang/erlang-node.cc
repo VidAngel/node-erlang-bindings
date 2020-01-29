@@ -52,6 +52,7 @@ Napi::Value ErlangNode::Call(const Napi::CallbackInfo &info) {
         message = "Temporary error, please try again.";
         break;
       default:
+        fprintf(stderr, "OTHER MESSAGE\n");
         message = "Unknown error";
     }
     Napi::TypeError::New(env, "Error calling remote method " + (string)module + "." + (string)method + ": " + message).ThrowAsJavaScriptException();
