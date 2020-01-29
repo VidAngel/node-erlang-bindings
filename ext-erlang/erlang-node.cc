@@ -61,7 +61,9 @@ Napi::Value ErlangNode::Call(const Napi::CallbackInfo &info) {
   const Napi::Value result = decode_erlang(env, &response);
   ei_x_free(&response);
   check_status(env, &result, (string)module + "." + (string)method);
-  //this->onReceive.Call(env.Global(), {Napi::String::New(env, "hello world")});
+  if(this->recv > 0) {
+    this->onReceive.Call(env.Global(), {Napi::String::New(env, "hello world")});
+  }
   return result;
 }
 
@@ -200,6 +202,10 @@ Napi::Value ErlangNode::Receive(const Napi::CallbackInfo& info) {
     Napi::TypeError::New(env, "Argument must be a function").ThrowAsJavaScriptException();
     return env.Undefined();
   }
+  if(this->recv > 0) {
+    this->onReceive.Unref();
+  }
+  this->recv = 1;
   this->onReceive = Napi::Persistent(info[0].As<Napi::Function>());
   return env.Undefined();
 }
