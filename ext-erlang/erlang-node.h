@@ -16,6 +16,7 @@ class ErlangNode : public Napi::ObjectWrap<ErlangNode> {
   private:
     int sockfd = -1;
     Napi::FunctionReference onReceive;
+    Napi::AsyncContext *onReceiveCtx;
     int recv = 0;
     static Napi::FunctionReference constructor;
     Napi::Value GetName(const Napi::CallbackInfo &info) { return Napi::String::New(info.Env(), this->node_name);}

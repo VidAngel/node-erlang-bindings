@@ -61,9 +61,6 @@ Napi::Value ErlangNode::Call(const Napi::CallbackInfo &info) {
   const Napi::Value result = decode_erlang(env, &response);
   ei_x_free(&response);
   check_status(env, &result, (string)module + "." + (string)method);
-  if(this->recv > 0) {
-    this->onReceive.Call(env.Global(), {Napi::String::New(env, "hello world")});
-  }
   return result;
 }
 
@@ -165,13 +162,14 @@ void ErlangNode::Listen() {
     FD_ZERO(&erlfd);
     switch(result) {
       case ERL_TICK:
-        // TODO
+        if(this->recv > 0) {
+          // TODO
+          //this->onReceive.MakeCallback(Napi::Object::New(this->onReceiveCtx->Env()), {Napi::String::New(this->onReceiveCtx->Env(), "hello world")}, *(this->onReceiveCtx));
+        }
+        fprintf(stderr, "TICK\n");
         break;
-      case EAGAIN:
-      case EMSGSIZE:
-      case EIO:
       case ERL_ERROR:
-        // TODO
+        fprintf(stderr, "Error reading Erlang message: %d\n",  erl_errno);
         break;
       default:
         // TODO
@@ -206,7 +204,10 @@ Napi::Value ErlangNode::Receive(const Napi::CallbackInfo& info) {
     this->onReceive.Unref();
   }
   this->recv = 1;
+  Napi::AsyncContext ctx = Napi::AsyncContext(env, "erl_async_context");
+  this->onReceiveCtx = &ctx;
   this->onReceive = Napi::Persistent(info[0].As<Napi::Function>());
+  //this->onReceive.MakeCallback(Napi::Object::New(this->onReceiveCtx->Env()), {Napi::String::New(this->onReceiveCtx->Env(), "hello world")}, *(this->onReceiveCtx));
   return env.Undefined();
 }
 
