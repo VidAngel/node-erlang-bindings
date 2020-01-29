@@ -151,23 +151,25 @@ class ErlangListener : public AsyncProgressWorker<ei_x_buff> {
         FD_ZERO(&erlfd);
         switch(result) {
           case ERL_TICK:
-        std::this_thread::sleep_for (std::chrono::seconds(1));
+            ei_x_free(&buff);
             break;
           case ERL_ERROR:
+            ei_x_free(&buff);
             if(erl_errno == EAGAIN) continue;
             fprintf(stderr, "Error reading Erlang message: %d\n",  erl_errno);
-            break;
+            return;
           default:
-            progress.Send(&buff, 1);
+            if(msg.msgtype == ERL_SEND || msg.msgtype == ERL_REG_SEND) {
+              progress.Send(&buff, 1);
+            }
             continue;
         }
       }
     }
     void OnOK() override {}
-    void OnProgress(const ei_x_buff* buff, size_t count) override {
+    void OnProgress(const ei_x_buff* term, size_t count) override {
       HandleScope scope(Env());
-      //Callback().Call({decode_erlang(Env(), b)});
-      Callback().Call({String::New(Env(), "PROGRESS")});
+      Callback().Call({decode_erlang(Env(), term->buff)});
     }
   private:
     Napi::Function callback;
