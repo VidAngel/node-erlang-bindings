@@ -123,13 +123,14 @@ ei_x_buff encode_args(const Napi::CallbackInfo &info, int index) {
   return request;
 }
 
-class ErlangListener : public Napi::AsyncWorker {
+using namespace Napi;
+class ErlangListener : public AsyncProgressWorker<ei_x_buff> {
   public:
-    ErlangListener(Napi::Function& callback, ErlangNode* node) : AsyncWorker(callback), callback(callback), node(node) {}
+    ErlangListener(Napi::Function& callback, ErlangNode* node) : AsyncProgressWorker(callback), callback(callback), node(node) {}
     ~ErlangListener(){}
-    void Execute() override {
+    void Execute(const ExecutionProgress& progress) {
+      std::this_thread::sleep_for (std::chrono::seconds(1));
       while(1) {
-        std::this_thread::sleep_for (std::chrono::seconds(1));
         int maxfd = node->sockfd;
         fd_set erlfd;
         FD_ZERO(&erlfd);
@@ -142,34 +143,35 @@ class ErlangListener : public Napi::AsyncWorker {
           FD_ZERO(&erlfd);
           continue;
         }
+        ei_x_buff buff;
+        erlang_msg msg;
         ei_x_new(&buff);
         int result = ei_xreceive_msg_tmo(node->sockfd, &msg, &buff, 10);
         FD_CLR(node->sockfd, &erlfd);
         FD_ZERO(&erlfd);
         switch(result) {
           case ERL_TICK:
-            fprintf(stderr, "TICK\n");
+        std::this_thread::sleep_for (std::chrono::seconds(1));
             break;
           case ERL_ERROR:
             if(erl_errno == EAGAIN) continue;
             fprintf(stderr, "Error reading Erlang message: %d\n",  erl_errno);
             break;
           default:
-            // TODO
-            fprintf(stderr, "CUSTOM MESSAGE\n");
-            return;
+            progress.Send(&buff, 1);
+            continue;
         }
       }
     }
-    void OnOK() override {
-      Napi::HandleScope scope(Env());
-      Callback().Call({Napi::String::New(Env(), "HELLO")});
+    void OnOK() override {}
+    void OnProgress(const ei_x_buff* buff, size_t count) override {
+      HandleScope scope(Env());
+      //Callback().Call({decode_erlang(Env(), b)});
+      Callback().Call({String::New(Env(), "PROGRESS")});
     }
   private:
-    ErlangNode* node;
     Napi::Function callback;
-    ei_x_buff buff;
-    erlang_msg msg;
+    ErlangNode* node;
 };
 
 Napi::FunctionReference ErlangNode::constructor;
@@ -178,6 +180,10 @@ ErlangNode::ErlangNode(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Erlang
   Napi::Env env = info.Env();
   if(info.Length() != 4) {
     Napi::TypeError::New(env, "Wrong number of arguments. Expected: node name, cookie, remote node, and listener callback").ThrowAsJavaScriptException();
+    return;
+  }
+  if(info[3].Type() != napi_function) {
+    Napi::TypeError::New(env, "Argument must be a function").ThrowAsJavaScriptException();
     return;
   }
 
@@ -192,12 +198,9 @@ ErlangNode::ErlangNode(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Erlang
     return;
   }
 
-  if(info[3].Type() != napi_function) {
-    Napi::TypeError::New(env, "Argument must be a function").ThrowAsJavaScriptException();
-    return;
-  }
   Napi::Function cb = info[3].As<Napi::Function>();
-  (new ErlangListener(cb, this))->Queue();
+  ErlangListener* el = new ErlangListener(cb, this);
+  el->Queue();
   if((this->sockfd = ei_connect(&(this->ec), const_cast<char*>(this->remote_node.c_str()))) < 0) {
     Napi::Error::New(env, "Could not connect to remote node '" + this->remote_node + "'").ThrowAsJavaScriptException();
     return;
