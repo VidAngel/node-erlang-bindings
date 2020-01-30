@@ -35,6 +35,13 @@ You can run remote calls using member function `rpc(module, function name, arg1,
 console.log(mynode.rpc('erlang', 'max', 3, 8)) // 8
 ```
 
+And you can send data to the NodeJS node in Elixir like so
+
+```elixir
+send {:'mynodename', :'mynodename@127.0.0.1'}, "HELLO"
+send {:'mynodename', :'mynodename@127.0.0.1'}, [1,2,3]
+```
+
 ### Tuples
 
 Tuples can be sent by using the `tuple()` function
