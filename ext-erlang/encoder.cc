@@ -60,7 +60,7 @@ Napi::Value decode_atom(Napi::Env env, char* buff, int* index) {
   if(strcmp(c, "true") == 0) return Napi::Boolean::New(env, true);
   else if(strcmp(c, "false") == 0) return Napi::Boolean::New(env, false);
   else if(strcmp(c, "nil") == 0) return env.Null();
-  else return Atom::Create(Napi::String::New(env, c));
+  else return Napi::String::New(env, c);
 }
 Napi::Number decode_int(Napi::Env env, char* buff, int* index) { 
   long n;
@@ -82,13 +82,13 @@ Napi::Object decode_map(Napi::Env env,char* buff, int* index, int arity) {
   }
   return obj;
 }
-Napi::Object decode_tuple(Napi::Env env, char* buff, int* index, int arity) {
+Napi::Array decode_tuple(Napi::Env env, char* buff, int* index, int arity) {
   ei_decode_tuple_header(buff, index, NULL);
   Napi::Array arr = Napi::Array::New(env, arity);
   for(int i = 0; i<arity; i++) {
     arr[i] = decode_erlang(env, buff, index);
   }
-  return Tuple::Create(arr);
+  return arr;
 }
 Napi::Array decode_list(Napi::Env env, char* buff, int* index, int arity) {
   ei_decode_list_header(buff, index, NULL);
@@ -169,28 +169,14 @@ void encode_number(Napi::Env env, Napi::Value val, ei_x_buff* request) {
 
 void encode_object(Napi::Env env, Napi::Value val, ei_x_buff* request) {
   Napi::Object globject = env.Global().Get("Object").ToObject();
-  Napi::Function getSyms = globject.Get("getOwnPropertySymbols").As<Napi::Function>();
   Napi::Function getProps = globject.Get("getOwnPropertyNames").As<Napi::Function>();
   
-  Napi::Array symbols = getSyms.Call(globject, {val}).As<Napi::Array>();
   Napi::Array props   = getProps.Call(globject, {val}).As<Napi::Array>();
 
-  ei_x_encode_map_header(request, symbols.Length() + props.Length());
-  int symlength = symbols.Length();
-  for(int i = 0; i<symlength; i++) {
-    Napi::Value symbol = Napi::Value(symbols[i]);
-    string arg = symbol.ToObject().Get("description").ToString().Utf8Value();
-    std::vector<char> c_arg(arg.begin(), arg.end());
-    c_arg.push_back('\0');
-    ei_x_encode_atom(request, &c_arg[0]);
-    encode_value(env, val.ToObject().Get(symbol.As<Napi::Symbol>()), request);
-  }
+  ei_x_encode_map_header(request, props.Length());
   int proplength = props.Length();
   for(int i = 0; i<proplength; i++) {
-    string arg = Napi::Value(props[i]).ToString().Utf8Value();
-    std::vector<char> c_arg(arg.begin(), arg.end());
-    c_arg.push_back('\0');
-    ei_x_encode_string(request, &c_arg[0]);
+    encode_value(env, Napi::Value(props[i]), request);
     encode_value(env, val.ToObject().Get(Napi::Value(props[i]).ToString()), request);
   }
 }
