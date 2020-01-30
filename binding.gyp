@@ -35,7 +35,8 @@
         "-I<!(./root-dir.erl)/usr/include/"
       ],
       "OTHER_LDFLAGS": [
-        "-L<!(./root-dir.erl)/usr/lib"
+        "-L<!(./root-dir.erl)/usr/lib/",
+        "-L<!(./root-dir.erl)/usr/include/"
       ],
     },
     "msvs_settings": {
