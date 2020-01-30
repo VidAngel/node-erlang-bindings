@@ -1,3 +1,6 @@
+#ifndef _REENTRANT
+#define _REENTRANT
+#endif
 #include <thread>
 #include <pthread.h>
 #include <erl_interface.h>
