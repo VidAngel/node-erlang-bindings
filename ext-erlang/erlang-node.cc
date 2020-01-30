@@ -90,20 +90,15 @@ void check_status(Napi::Env env, const Napi::Value *val, string fnName) {
    *   }
    * }
    */
-  
-  if(val->IsNull()) return;
-  if(!is_tuple(*val)) return;
-  Tuple* t = unwrap<Tuple>(*val);
-  Napi::Array arr = t->value(env).As<Napi::Array>();
+  if(!val->IsArray()) return;
+  Napi::Array arr = val->As<Napi::Array>();
   if(arr.Length() != 2) return;
   Napi::Value first = arr[(int)0];
-  if(!is_atom(first)) return;
   string desc = first.ToString().Utf8Value();
   if(desc != "badrpc") return;
-
-  Tuple* sub = unwrap<Tuple>(arr[1]);
-  Tuple* subsub = unwrap<Tuple>(sub->value(env).As<Napi::Array>()[1]);
-  Napi::Array subsubarr = subsub->value(env).As<Napi::Array>();
+  // there's got to be a better way...
+  Napi::Array subarr = ((Napi::Value)arr[1]).As<Napi::Array>();
+  Napi::Array subsubarr = Napi::Value(subarr[1]).As<Napi::Array>();
   string err = ((Napi::Value)subsubarr[(int)0]).ToString().Utf8Value();
 
   string prefix = "badrpc(" + err + ")";
