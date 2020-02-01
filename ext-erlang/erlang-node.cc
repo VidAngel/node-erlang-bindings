@@ -41,10 +41,12 @@ Napi::Value ErlangNode::Call(const Napi::CallbackInfo &info) {
 
   ei_x_buff request = encode_args(info, 2);
 
+  this->pending = true;
   ei_x_buff response;
   ei_x_new(&response);
   int bytes = ei_rpc(&ec, sockfd, &module[0], &method[0], request.buff, request.index, &response);
   ei_x_free(&request);
+  this->pending = false;
 
   if(bytes == -1) {
     string message;
@@ -136,6 +138,7 @@ class ErlangListener : public AsyncProgressWorker< std::tuple<int, long, ei_x_bu
     void Execute(const ExecutionProgress& progress) {
       std::this_thread::sleep_for (std::chrono::seconds(1));
       while(1) {
+        if(node->pending) continue;
         if(node->sockfd == -1) break;
         int maxfd = node->sockfd;
         fd_set erlfd;
