@@ -26,13 +26,6 @@ proc.stdout.on('data', data => {
   eqq(enode.rpc("Elixir.IO", "inspect", "⋄~♥~⋄"), "⋄~♥~⋄");
   let nested = ["a", "b", ["c", "d", "e", ["f", "g"], "h", "i"], "j"];
   assert.deepStrictEqual(enode.rpc("Elixir.IO", "inspect", nested), nested);
-  eqq(nested[0], "a");
-  eqq(nested[3], "j");
-  eqq(nested[2][0], "c");
-  eqq(nested[2][2], "e");
-  eqq(nested[2][3][0], "f");
-  eqq(nested[2][3][1], "g");
-  eqq(nested[2][4], "h");
   eqq(enode.rpc("Elixir.String", "upcase", "guy fieri"), "GUY FIERI");
   let tupe = enode.rpc("Elixir.IO", "inspect", tuple(1, 2, 3.506, atom("I AM ATOM")));
   eqq(tupe.length, 4);

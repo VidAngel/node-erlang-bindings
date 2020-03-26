@@ -19,6 +19,9 @@ Napi::Value decode_erlang(Napi::Env env, char* buff, int* index) {
   ei_get_type(buff, index, &type, &size);
   // see ei.h and http://erlang.org/doc/apps/erts/erl_ext_dist.html
   switch(type) {
+    case 131: // version number
+      (*index)++;
+      return decode_erlang(env, buff, index);
     case ERL_SMALL_ATOM_UTF8_EXT:
     case ERL_ATOM_UTF8_EXT:
     case ERL_ATOM_EXT: // includes booleans (atoms 'true' and 'false') and nil
@@ -38,7 +41,7 @@ Napi::Value decode_erlang(Napi::Env env, char* buff, int* index) {
       return decode_charlist(env, buff, index, size);
     case ERL_BINARY_EXT:
       return decode_binary(env, buff, index, size);
-    case ERL_NIL_EXT: // empty list
+    case ERL_NIL_EXT: // empty list (or end of list)
       (*index)++;
       return Napi::Array::New(env, {});
     case ERL_MAP_EXT:
@@ -96,6 +99,9 @@ Napi::Array decode_list(Napi::Env env, char* buff, int* index, int arity) {
   for(int i = 0; i<arity; i++) {
     arr[i] = decode_erlang(env, buff, index);
   }
+  if(arity == 0) return arr;
+  decode_erlang(env, buff, index); // list ender, ignore
+  // TODO: handle list tails
   return arr;
 }
 Napi::Value decode_binary(Napi::Env env, char* buff, int* index, int size) {
