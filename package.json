@@ -1,6 +1,6 @@
 {
   "name": "erlang-bindings",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Erlang bindings for Node.js",
   "contributors": [
     "Ian Hunter <ihunter@vidangel.com>",
