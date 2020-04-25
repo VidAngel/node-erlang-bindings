@@ -104,7 +104,7 @@ void check_status(Napi::Env env, const Napi::Value *val, string fnName) {
   string err = ((Napi::Value)subsubarr[(int)0]).ToString().Utf8Value();
 
   string prefix = "badrpc(" + err + ")";
-  if(err == "undef") {
+  if(err == "undef" || err == "function_clause") {
     Napi::TypeError::New(env, prefix + ": Erlang function " + fnName + " not found").ThrowAsJavaScriptException();
   } else if(err == "noproc") {
     Napi::Error::New(env, prefix + ": No remote process found.").ThrowAsJavaScriptException();
