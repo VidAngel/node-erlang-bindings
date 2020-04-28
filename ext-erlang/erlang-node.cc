@@ -109,7 +109,11 @@ void check_status(Napi::Env env, const Napi::Value *val, string fnName) {
   } else if(err == "noproc") {
     Napi::Error::New(env, prefix + ": No remote process found.").ThrowAsJavaScriptException();
   } else {
-    Napi::Error::New(env, prefix).ThrowAsJavaScriptException();
+    Napi::Object json = env.Global().Get("JSON").As<Napi::Object>();
+    string suffix = json.Get("stringify").As<Napi::Function>()
+                      .Call(json, { val->As<Napi::Object>() })
+                      .ToString().Utf8Value();
+    Napi::Error::New(env, prefix + ": " + suffix).ThrowAsJavaScriptException();
   }
 }
 

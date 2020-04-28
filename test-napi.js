@@ -46,6 +46,8 @@ proc.stdout.on('data', data => {
   eqq(enode.ex.Enum.at([4,5,2], 1), 5);
   eqq(enode.ex.String.pad_leading("a", 4, "0"), "000a");
   function badenode(){  enode.ex.GenServer.call(atom("SomeFakeProcessName"), atom("fakeaction"))};
+  function enoent(){ enode.ex.System.cmd("missing command", ["arg1"]) };
+  assert.throws(enoent, /badrpc\(enoent\)/)
   assert.throws(badenode, /badrpc\(noproc\)/);
   assert.throws(enode.ex.FakeModule.fake_function);
   enode.ex.IO.ANSI.format(["Hello", atom("red"), "World"], true);
