@@ -1,8 +1,8 @@
 const assert = require('assert');
 const eqq = assert.strictEqual;
-const {ErlangNode,tuple,charlist,atom,Tuple,Atom} = require('./index');
+const {ErlangNode,tuple,charlist,atom} = require('./index');
 
-const spawn = require('child_process').spawn;
+const { spawn } = require('child_process');
 
 const proc = spawn('elixir', ['--no-halt','--name','napi@127.0.0.1','--cookie',
                               'abc123','-e','IO.puts :ready'])
@@ -31,23 +31,23 @@ proc.stdout.on('data', data => {
   eqq(tupe.length, 4);
   eqq(tupe[2],3.506);
   const arr = [1,2,3.5,"abc",[4,5,"heyyy"]];
-  assert.deepEqual(enode.rpc("Elixir.IO", "inspect", arr), arr);
+  assert.deepStrictEqual(enode.rpc("Elixir.IO", "inspect", arr), arr);
   tupe = enode.rpc("Elixir.IO", "inspect", tuple(1,2,3,['a','b','c',tuple("hello",atom("world"))]));
   eqq(tupe[3][2], 'c');
   eqq(tupe[3][3][0], 'hello');
-  assert.deepEqual(enode.rpc("Elixir.IO","inspect", []), []);
+  assert.deepStrictEqual(enode.rpc("Elixir.IO","inspect", []), []);
   eqq(enode.rpc("Elixir.Enum", "at", [5], 10), null);
   eqq(enode.rpc("Elixir.Enum", "at", [5], 0), 5);
   eqq(enode.rpc("Elixir.Enum", "at", [], 10), null);
-  assert.deepEqual(enode.rpc("Elixir.IO", "inspect", {x: 4, y: -24}), {x: 4, y: -24});
-  assert.deepEqual(enode.rpc("Elixir.IO", "inspect", {}), {});
+  assert.deepStrictEqual(enode.rpc("Elixir.IO", "inspect", {x: 4, y: -24}), {x: 4, y: -24});
+  assert.deepStrictEqual(enode.rpc("Elixir.IO", "inspect", {}), {});
 
   eqq(enode.ex.List.first([6,3,2]), 6);
   eqq(enode.ex.Enum.at([4,5,2], 1), 5);
   eqq(enode.ex.String.pad_leading("a", 4, "0"), "000a");
-  function badenode(){  enode.ex.GenServer.call(atom("SomeFakeProcessName"), atom("fakeaction"))};
-  function enoent(){ enode.ex.System.cmd("missing command", ["arg1"]) };
-  assert.throws(enoent, /badrpc\(enoent\)/)
+  function badenode(){ enode.ex.GenServer.call(atom("SomeFakeProcessName"), atom("fakeaction")); }
+  function enoent(){ enode.ex.System.cmd("missing command", ["arg1"]); }
+  assert.throws(enoent, /badrpc\(enoent\)/);
   assert.throws(badenode, /badrpc\(noproc\)/);
   assert.throws(enode.ex.FakeModule.fake_function);
   enode.ex.IO.ANSI.format(["Hello", atom("red"), "World"], true);
@@ -55,7 +55,7 @@ proc.stdout.on('data', data => {
   done = true;
   console.log("All tests passed. Closing node.");
   } finally {
-    proc.kill()
+    proc.kill();
     enode.disconnect();
   }
-})
+});

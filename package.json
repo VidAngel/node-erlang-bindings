@@ -1,11 +1,14 @@
 {
   "name": "erlang-bindings",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "description": "Erlang bindings for Node.js",
   "contributors": [
     "Ian Hunter <ihunter@vidangel.com>",
-    "Jarom McDonald <jarom@vidangel.com>"
+    "Jarom McDonald <jarom@vidangel.com>",
+    "Logan Kearsley <lkearsley@vidangel.com>"
   ],
+  "main": "./index.js",
+  "types": "./index.d.ts",
   "license": "MIT",
   "dependencies": {
     "node-addon-api": "^2.0.0"

@@ -1,41 +1,66 @@
-module.exports = require('./build/Release/erlang');
-require('util').inherits(module.exports.ErlangNode, require('events'));
-module.exports.ErlangNode.prototype.emitt = function() {
+const erlang = require('./build/Release/erlang');
+const { inherits, inspect } = require('util');
+
+inherits(erlang.ErlangNode, require('events'));
+
+erlang.ErlangNode.prototype.emitt = function() {
   console.log(this, arguments);
 };
-module.exports.charlist = (str) => {
-  const list = [];
-  // "A string [charlist] in Erlang is a list of integers between 0 and 255"
-  for(let i = 0; i<str.length; i++) {
-    const code = str.charCodeAt(i)
-    if(code < 0 || code > 255) throw new Error("Invalid character: " + str[i]);
-    list.push(code);
-  }
-  return list;
+
+erlang.ErlangNode.prototype.call = function(strings, ...args) {
+  let l = args.length;
+  let path = "";
+  for (let i = 0; i < l; i++) path += strings[i] + args[i];
+  path += strings[l];
+  const idx = path.lastIndexOf(':');
+  if (idx === -1) return this.rpc.bind(this, "", path);
+  return this.rpc.bind(this, path.substring(0, idx), path.substring(idx+1));
 };
+
 const moduleHandler = {
-  get: function(obj, prop) {
-    if(prop[0].toUpperCase() == prop[0]) {
-      return new Proxy(Object.assign(obj, {path: obj.path + "." + prop}), moduleHandler);
+  get({ self, path, cache }, prop) {
+    let val = cache[prop];
+    if (typeof val === 'undefined') {  
+      function ex(...args) { self.rpc(path, prop, ...args); }
+      ex.self = self;
+      ex.path = path + '.' + prop;
+      ex.cache = {};
+      
+      cache[prop] = val = new Proxy(ex, moduleHandler);
     }
-    return function() {
-      return obj.self.rpc(obj.path, prop, ...arguments);
-    }
+    return val;
   }
 };
 
-Object.defineProperty(module.exports.ErlangNode.prototype, "ex", {
-  get: function() {
-    return new Proxy({path: "Elixir", self: this}, moduleHandler);
-  }
+Object.defineProperty(erlang.ErlangNode.prototype, "ex", {
+  get: () => new Proxy({ self: this, path: "Elixir", cache: {} }, {
+    get({ self, path, cache }, prop) {
+      let val = cache[prop];
+      if (typeof val === 'undefined') {
+        cache[prop] = val = new Proxy(
+          { self, path: path + '.' + prop, cache: {} }, moduleHandler,
+        );
+      }
+      return val;
+    },
+  })
 });
-module.exports.tuple = function tupleFactory(...args) { return new module.exports.Tuple(args); }
-module.exports.atom = function atomFactory(a) {return new module.exports.Atom(a); }
 
-const util = require('util');
-module.exports.Tuple.prototype[util.inspect.custom] = function(depth, options){
-  return "Tuple {" + util.inspect(this.value).slice(1,-1)  + "}"
-}
-module.exports.Atom.prototype[util.inspect.custom] = function(depth, options){
-  return "Atom { " + util.inspect(this.value) + " }"
-}
+erlang.charlist = (str) => Array.from(str, char => {
+  const code = char.charCodeAt(0);
+  if(code < 0 || code > 255) throw new Error("Invalid character: " + char);
+  return code;
+});
+
+erlang.tuple = (...args) => new erlang.Tuple(args);
+erlang.atom = (a) => new erlang.Atom(a);
+
+erlang.Tuple.prototype[inspect.custom] = function (_depth, _options) {
+  return "Tuple {" + inspect(this.value).slice(1,-1)  + "}";
+};
+
+erlang.Atom.prototype[inspect.custom] = function(_depth, _options) {
+  return "Atom { " + inspect(this.value) + " }";
+};
+
+module.exports = erlang;

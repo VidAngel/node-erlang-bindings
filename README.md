@@ -35,7 +35,21 @@ You can run remote calls using member function `rpc(module, function name, arg1,
 console.log(mynode.rpc('erlang', 'max', 3, 8)) // 8
 ```
 
-And you can send data to the NodeJS node in Elixir like so
+or using the member string tag `call`
+
+```javascript
+console.log(mynode.call`erlang:max`(3, 8)) // 8
+```
+
+The `call` string tag produces a bound function which can be used to repeat calls to the same remote procedure multiple times more efficiently. E.g.,
+
+```javascript
+const erlang_max = mynode.call`erlang:max`;
+console.log(erlang_max(3, 8)); // 8
+console.log(erlang_max(7, 4)); // 7
+```
+
+You can send data to the NodeJS node in Elixir like so
 
 ```elixir
 send {:'mynodename', :'mynodename@127.0.0.1'}, "HELLO"
@@ -57,7 +71,6 @@ console.log(mynode.rpc('erlang', 'tuple_size', tuple(5,2,"hello"))) // 3
 const {atom} = require('erlang-bindings');
 console.log(mynode.rpc('erlang', 'atom_to_list', atom('hello'))) // 'hello'
 ```
-
 
 ### Charlists
 
@@ -84,7 +97,7 @@ Erlang: `%{a: 3}`
 
 ### Elixir
 
-Remote connections to Elixir nodes offer conva special provisioning allowing
+Remote connections to Elixir nodes offer a special provisioning allowing
 RPC calls to modules under the Elixir module to be written as if they were
 native Node.js function calls.
 
