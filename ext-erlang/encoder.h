@@ -1,6 +1,5 @@
 #pragma once
 #include <napi.h>
-#include <erl_interface.h>
 #include <ei.h>
 Napi::Value decode_atom(Napi::Env env, char* buff, int* index);
 Napi::Number decode_int(Napi::Env env,char* buff, int* index);

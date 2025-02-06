@@ -3,7 +3,6 @@
 #endif
 #include <thread>
 #include <pthread.h>
-#include <erl_interface.h>
 #include <ei.h>
 #include <napi.h>
 #include <cstdlib>

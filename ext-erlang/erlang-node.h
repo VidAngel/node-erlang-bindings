@@ -1,7 +1,6 @@
 #pragma once
 #include <sys/select.h>
 #include <napi.h>
-#include <erl_interface.h>
 #include <ei.h>
 #include <string>
 
